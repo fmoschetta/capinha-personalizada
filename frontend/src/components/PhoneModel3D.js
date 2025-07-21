@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Box, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 const PhoneModel3D = ({ phoneModel, design, position = { x: 0, y: 0, scale: 1, rotation: 0 } }) => {
@@ -16,15 +15,10 @@ const PhoneModel3D = ({ phoneModel, design, position = { x: 0, y: 0, scale: 1, r
   if (!phoneModel) {
     return (
       <group>
-        <Text
-          position={[0, 0, 0]}
-          fontSize={0.5}
-          color="#a855f7"
-          anchorX="center"
-          anchorY="middle"
-        >
-          Selecione um modelo
-        </Text>
+        <mesh position={[0, 0, 0]}>
+          <boxGeometry args={[2, 0.5, 0.1]} />
+          <meshStandardMaterial color="#a855f7" />
+        </mesh>
       </group>
     );
   }
