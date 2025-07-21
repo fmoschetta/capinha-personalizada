@@ -35,64 +35,59 @@ const PhoneModel3D = ({ phoneModel, design, position = { x: 0, y: 0, scale: 1, r
   return (
     <group ref={phoneRef}>
       {/* Phone body */}
-      <Box
+      <mesh
         position={[0, 0, 0]}
-        args={[phoneWidth, phoneHeight, phoneDepth]}
-        material-color={phoneColor}
         castShadow
         receiveShadow
       >
+        <boxGeometry args={[phoneWidth, phoneHeight, phoneDepth]} />
         <meshStandardMaterial 
           color={phoneColor} 
           roughness={0.1}
           metalness={0.8}
         />
-      </Box>
+      </mesh>
 
       {/* Screen */}
-      <Box
-        position={[0, 0, phoneDepth/2 + 0.01]}
-        args={[phoneWidth * 0.85, phoneHeight * 0.9, 0.02]}
-      >
+      <mesh position={[0, 0, phoneDepth/2 + 0.01]}>
+        <boxGeometry args={[phoneWidth * 0.85, phoneHeight * 0.9, 0.02]} />
         <meshStandardMaterial 
           color="#000000"
           roughness={0.0}
           metalness={0.0}
           emissive="#111111"
         />
-      </Box>
+      </mesh>
 
       {/* Camera bump (for iPhones) */}
       {phoneModel.id.includes('iphone') && (
-        <Box
-          position={[-phoneWidth * 0.25, phoneHeight * 0.3, -phoneDepth/2 - 0.03]}
-          args={[phoneWidth * 0.25, phoneWidth * 0.25, 0.06]}
-        >
+        <mesh position={[-phoneWidth * 0.25, phoneHeight * 0.3, -phoneDepth/2 - 0.03]}>
+          <boxGeometry args={[phoneWidth * 0.25, phoneWidth * 0.25, 0.06]} />
           <meshStandardMaterial 
             color={phoneColor}
             roughness={0.1}
             metalness={0.8}
           />
-        </Box>
+        </mesh>
       )}
 
       {/* Design overlay */}
       {design && (
         <group ref={designRef}>
           {/* Background for the design */}
-          <Box
+          <mesh
             position={[
               position.x * 0.01, 
               position.y * 0.01, 
               -phoneDepth/2 - 0.001
             ]}
-            args={[
+            rotation={[0, 0, (position.rotation * Math.PI) / 180]}
+          >
+            <boxGeometry args={[
               phoneWidth * 0.9 * position.scale, 
               phoneHeight * 0.85 * position.scale, 
               0.005
-            ]}
-            rotation={[0, 0, (position.rotation * Math.PI) / 180]}
-          >
+            ]} />
             <meshStandardMaterial 
               color="#ffffff"
               transparent
@@ -100,22 +95,22 @@ const PhoneModel3D = ({ phoneModel, design, position = { x: 0, y: 0, scale: 1, r
               roughness={0.8}
               metalness={0.1}
             />
-          </Box>
+          </mesh>
           
           {/* Design pattern simulation */}
-          <Box
+          <mesh
             position={[
               position.x * 0.01, 
               position.y * 0.01, 
               -phoneDepth/2 - 0.002
             ]}
-            args={[
+            rotation={[0, 0, (position.rotation * Math.PI) / 180]}
+          >
+            <boxGeometry args={[
               phoneWidth * 0.7 * position.scale, 
               phoneHeight * 0.6 * position.scale, 
               0.003
-            ]}
-            rotation={[0, 0, (position.rotation * Math.PI) / 180]}
-          >
+            ]} />
             <meshStandardMaterial 
               color="#8b5cf6"
               transparent
@@ -123,22 +118,22 @@ const PhoneModel3D = ({ phoneModel, design, position = { x: 0, y: 0, scale: 1, r
               roughness={0.3}
               metalness={0.2}
             />
-          </Box>
+          </mesh>
           
           {/* Additional design elements based on design type */}
           {design.id === 'hearts-floating' && (
             <>
               {[...Array(5)].map((_, i) => (
-                <Box
+                <mesh
                   key={i}
                   position={[
                     (Math.random() - 0.5) * phoneWidth * 0.6 * position.scale + position.x * 0.01,
                     (Math.random() - 0.5) * phoneHeight * 0.5 * position.scale + position.y * 0.01,
                     -phoneDepth/2 - 0.003 - i * 0.001
                   ]}
-                  args={[0.1, 0.1, 0.002]}
                   rotation={[0, 0, Math.random() * Math.PI]}
                 >
+                  <boxGeometry args={[0.1, 0.1, 0.002]} />
                   <meshStandardMaterial 
                     color="#ec4899"
                     transparent
@@ -146,7 +141,7 @@ const PhoneModel3D = ({ phoneModel, design, position = { x: 0, y: 0, scale: 1, r
                     emissive="#ec4899"
                     emissiveIntensity={0.2}
                   />
-                </Box>
+                </mesh>
               ))}
             </>
           )}
@@ -154,23 +149,23 @@ const PhoneModel3D = ({ phoneModel, design, position = { x: 0, y: 0, scale: 1, r
           {design.id === 'geometric-modern' && (
             <>
               {[...Array(8)].map((_, i) => (
-                <Box
+                <mesh
                   key={i}
                   position={[
                     (i % 4 - 1.5) * 0.3 * position.scale + position.x * 0.01,
                     (Math.floor(i / 4) - 0.5) * 0.6 * position.scale + position.y * 0.01,
                     -phoneDepth/2 - 0.003 - (i % 3) * 0.001
                   ]}
-                  args={[0.08, 0.08, 0.002]}
                   rotation={[0, 0, (position.rotation + i * 45) * Math.PI / 180]}
                 >
+                  <boxGeometry args={[0.08, 0.08, 0.002]} />
                   <meshStandardMaterial 
                     color={i % 2 === 0 ? "#06d6a0" : "#f72585"}
                     transparent
                     opacity={0.8}
                     metalness={0.3}
                   />
-                </Box>
+                </mesh>
               ))}
             </>
           )}
@@ -178,16 +173,10 @@ const PhoneModel3D = ({ phoneModel, design, position = { x: 0, y: 0, scale: 1, r
       )}
 
       {/* Phone brand text */}
-      <Text
-        position={[0, -phoneHeight * 0.4, -phoneDepth/2 - 0.001]}
-        fontSize={phoneWidth * 0.1}
-        color="#666666"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, 0, 0]}
-      >
-        {phoneModel.brand}
-      </Text>
+      <mesh position={[0, -phoneHeight * 0.4, -phoneDepth/2 - 0.001]}>
+        <boxGeometry args={[phoneWidth * 0.8, 0.05, 0.001]} />
+        <meshStandardMaterial color="#666666" />
+      </mesh>
     </group>
   );
 };
