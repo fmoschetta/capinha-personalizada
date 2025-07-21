@@ -181,7 +181,6 @@ function App() {
                   <PerspectiveCamera makeDefault position={[0, 0, 8]} />
                   <ambientLight intensity={0.4} />
                   <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={0.8} />
-                  <Environment preset="studio" />
                   
                   <PhoneModel3D 
                     phoneModel={selectedPhone}
