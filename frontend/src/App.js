@@ -12,6 +12,11 @@ import PhoneModel3D from './components/PhoneModel3D';
 import ModelSelector from './components/ModelSelector';
 import GallerySelector from './components/GallerySelector';
 import ImageUploader from './components/ImageUploader';
+import DesignEditor from './components/DesignEditor';
+import PriceCalculator from './components/PriceCalculator';
+import ReviewSystem from './components/ReviewSystem';
+import SocialProof from './components/SocialProof';
+import ProgressTracker from './components/ProgressTracker';
 import FinalizeOrder from './components/FinalizeOrder';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -32,6 +37,9 @@ function App() {
   const [galleryItems, setGalleryItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [designId, setDesignId] = useState(null);
+  const [showReviews, setShowReviews] = useState(false);
+  const [pricing, setPricing] = useState(null);
+  const [completedSteps, setCompletedSteps] = useState([]);
 
   // Load initial data
   useEffect(() => {
@@ -58,12 +66,14 @@ function App() {
 
   const handlePhoneSelect = (phone) => {
     setSelectedPhone(phone);
+    setCompletedSteps(prev => [...prev.filter(s => s !== 1), 1]);
     setCurrentStep(2);
     toast.success(`${phone.name} selecionado!`);
   };
 
   const handleDesignSelect = (design, type = 'gallery') => {
     setSelectedDesign({ ...design, type });
+    setCompletedSteps(prev => [...prev.filter(s => s !== 2), 2]);
     setCurrentStep(3);
     toast.success('Design selecionado!');
   };
@@ -76,6 +86,7 @@ function App() {
       type: 'upload'
     };
     setSelectedDesign(uploadDesign);
+    setCompletedSteps(prev => [...prev.filter(s => s !== 2), 2]);
     setCurrentStep(3);
     toast.success('Imagem carregada com sucesso!');
   };
@@ -95,6 +106,7 @@ function App() {
 
       const response = await axios.post(`${API_BASE}/api/create-design`, designData);
       setDesignId(response.data.design.id);
+      setCompletedSteps(prev => [...prev.filter(s => s !== 3), 3]);
       setCurrentStep(4);
       toast.success('Design salvo! Finalize seu pedido.');
     } catch (error) {
@@ -105,12 +117,14 @@ function App() {
 
   const handleOrderComplete = () => {
     toast.success('Pedido realizado com sucesso!');
+    setCompletedSteps([1, 2, 3, 4]);
     // Reset to beginning
     setTimeout(() => {
       setCurrentStep(1);
       setSelectedPhone(null);
       setSelectedDesign(null);
       setDesignId(null);
+      setCompletedSteps([]);
       setDesignPosition({ x: 0, y: 0, scale: 1, rotation: 0 });
     }, 2000);
   };
@@ -136,29 +150,11 @@ function App() {
           </p>
           
           {/* Progress Indicator */}
-          <div className="flex justify-center items-center space-x-4 mb-8">
-            {[1, 2, 3, 4].map((step) => (
-              <div key={step} className="flex items-center">
-                <motion.div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${
-                    currentStep >= step 
-                      ? 'bg-purple-500 border-purple-400 text-white' 
-                      : 'bg-transparent border-purple-400 text-purple-400'
-                  }`}
-                  animate={{ 
-                    scale: currentStep === step ? 1.2 : 1,
-                    backgroundColor: currentStep >= step ? '#8b5cf6' : 'transparent'
-                  }}
-                >
-                  {step}
-                </motion.div>
-                {step < 4 && (
-                  <div className={`w-16 h-0.5 mx-2 ${
-                    currentStep > step ? 'bg-purple-400' : 'bg-purple-700'
-                  }`} />
-                )}
-              </div>
-            ))}
+          <div className="max-w-md mx-auto mb-8">
+            <ProgressTracker 
+              currentStep={currentStep} 
+              completedSteps={completedSteps}
+            />
           </div>
         </motion.div>
 
@@ -202,51 +198,12 @@ function App() {
 
             {/* Controls */}
             {currentStep === 3 && selectedDesign && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-6 space-y-4"
-              >
-                <div className="text-white text-sm font-medium">Ajustar Posição:</div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-purple-300 text-xs mb-1">Tamanho</label>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.1"
-                      value={designPosition.scale}
-                      onChange={(e) => handlePositionChange({
-                        ...designPosition,
-                        scale: parseFloat(e.target.value)
-                      })}
-                      className="w-full accent-purple-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-purple-300 text-xs mb-1">Rotação</label>
-                    <input
-                      type="range"
-                      min="-180"
-                      max="180"
-                      step="5"
-                      value={designPosition.rotation}
-                      onChange={(e) => handlePositionChange({
-                        ...designPosition,
-                        rotation: parseInt(e.target.value)
-                      })}
-                      className="w-full accent-purple-500"
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={saveDesign}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-xl transition-all transform hover:scale-105"
-                >
-                  Finalizar Design
-                </button>
-              </motion.div>
+              <DesignEditor
+                design={selectedDesign}
+                position={designPosition}
+                onPositionChange={handlePositionChange}
+                onSave={saveDesign}
+              />
             )}
           </motion.div>
 
@@ -258,11 +215,17 @@ function App() {
           >
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
-                <ModelSelector 
-                  models={phoneModels}
-                  onSelect={handlePhoneSelect}
-                  selectedPhone={selectedPhone}
-                />
+                <>
+                  <ModelSelector 
+                    models={phoneModels}
+                    onSelect={handlePhoneSelect}
+                    selectedPhone={selectedPhone}
+                  />
+                  
+                  <div className="mt-8">
+                    <SocialProof />
+                  </div>
+                </>
               )}
 
               {currentStep === 2 && (
@@ -274,36 +237,56 @@ function App() {
                   <ImageUploader
                     onUpload={handleImageUpload}
                   />
+                  
+                  {/* Reviews Section */}
+                  <div className="mt-8">
+                    <button
+                      onClick={() => setShowReviews(!showReviews)}
+                      className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-6 rounded-xl transition-all mb-4"
+                    >
+                      {showReviews ? 'Ocultar' : 'Ver'} Avaliações dos Clientes
+                    </button>
+                    
+                    {showReviews && (
+                      <ReviewSystem />
+                    )}
+                  </div>
                 </>
               )}
 
               {currentStep === 3 && selectedDesign && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20"
-                >
-                  <h3 className="text-2xl font-bold text-white mb-4">
-                    Perfeito! 🎉
-                  </h3>
-                  <p className="text-purple-200 mb-6">
-                    Use os controles ao lado para ajustar a posição do seu design na capa.
-                    Quando estiver satisfeito, clique em "Finalizar Design".
-                  </p>
-                  <div className="flex items-center space-x-4 p-4 bg-black/20 rounded-xl">
-                    <img 
-                      src={`${API_BASE}${selectedDesign.image_url}`} 
-                      alt={selectedDesign.title}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div>
-                      <p className="text-white font-medium">{selectedDesign.title}</p>
-                      <p className="text-purple-300 text-sm">
-                        {selectedPhone?.name}
-                      </p>
+                <>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 mb-6"
+                  >
+                    <h3 className="text-2xl font-bold text-white mb-4">
+                      Perfeito! 🎉
+                    </h3>
+                    <p className="text-purple-200 mb-6">
+                      Use os controles ao lado para ajustar a posição do seu design na capa.
+                      Quando estiver satisfeito, clique em "Finalizar Design".
+                    </p>
+                    <div className="flex items-center space-x-4 p-4 bg-black/20 rounded-xl">
+                      <div className="w-16 h-16 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                        <span className="text-2xl">🎨</span>
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">{selectedDesign.title}</p>
+                        <p className="text-purple-300 text-sm">
+                          {selectedPhone?.name}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                  
+                  <PriceCalculator
+                    phoneModel={selectedPhone}
+                    design={selectedDesign}
+                    onPriceChange={setPricing}
+                  />
+                </>
               )}
 
               {currentStep === 4 && designId && (
